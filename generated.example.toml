@@ -1,0 +1,39 @@
+driver = "mysql"
+dsn = "root:password@tcp(127.0.0.1:3306)/demo?charset=utf8mb4&parseTime=True&loc=Local"
+out_dir = "generated"
+
+# 可选：不设置时默认使用 out_dir 下的 model/query/validator
+model_out = ""
+query_out = ""
+validator_out = ""
+validator_package = "request"
+
+# 空数组表示生成全部表
+tables = []
+table_prefix = ""
+
+ignore_fields = [
+  "created_at",
+  "updated_at",
+  "deleted_at",
+]
+
+tags = [
+  "json",
+  "form",
+  "xml",
+  "url",
+]
+
+insert_scene = "insert"
+update_scene = "update"
+delete_scene = "delete"
+
+# 自定义类型映射。表名是数据库类型，go_type 是生成的 Go 类型。
+[type_mappings.uuid]
+go_type = "uuid.UUID"
+import_path = "github.com/google/uuid"
+
+[type_mappings.jsonb]
+go_type = "datatypes.JSON"
+import_path = "gorm.io/datatypes"
