@@ -20,7 +20,7 @@ import (
 func openDB(driver, dsn string) (*gorm.DB, error) {
 	switch normalizeDriver(driver) {
 	case "mysql", "tidb":
-		return gorm.Open(mysql.Open(dsn), &gorm.Config{})
+		return openMySQLCompatible(dsn)
 	case "postgres":
 		return gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	case "gaussdb":
@@ -38,6 +38,14 @@ func openDB(driver, dsn string) (*gorm.DB, error) {
 	default:
 		return nil, fmt.Errorf("unsupported driver %q", driver)
 	}
+}
+
+func openMySQLCompatible(dsn string) (*gorm.DB, error) {
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil && strings.Contains(err.Error(), "missing the slash separating the database name") {
+		return nil, fmt.Errorf("invalid mysql/tidb dsn %q: database name must follow a slash, for example root:password@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local: %w", dsn, err)
+	}
+	return db, err
 }
 
 // normalizeDriver 将命令行传入的数据库名称别名归一化。

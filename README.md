@@ -20,7 +20,7 @@ go mod tidy
 cp generated.example.yaml generated.yaml
 # 或
 cp generated.example.toml generated.toml
-go run ./cmd/generated
+go run ./cmd/dlayer
 ```
 
 默认会读取数据库中的全部表，并生成：
@@ -33,6 +33,14 @@ generated/
 ```
 
 程序会按顺序读取 `generated.yaml`、`generated.yml`、`generated.toml`、`generator.yaml`、`generator.yml`、`generator.toml` 中第一个存在的配置文件。
+
+也可以指定配置文件位置：
+
+```bash
+go run ./cmd/dlayer -config ./configs/dev.toml
+# 或
+go run ./cmd/dlayer -c ./configs/dev.yaml
+```
 
 只生成指定表：
 
