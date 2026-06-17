@@ -32,7 +32,7 @@ generated/
   validator/   # 带 gookit/validate tag、场景和消息的请求验证结构
 ```
 
-程序会按顺序读取 `generated.yaml`、`generated.yml`、`generated.toml`、`generator.yaml`、`generator.yml`、`generator.toml` 中第一个存在的配置文件。
+程序会按顺序读取 `dlayer.yaml`、`dlayer.yml`、`dlayer.toml`、`generated.yaml`、`generated.yml`、`generated.toml`、`generator.yaml`、`generator.yml`、`generator.toml` 中第一个存在的配置文件。
 
 也可以指定配置文件位置：
 
@@ -64,13 +64,14 @@ tables:
 - `ignore_fields`：验证结构中忽略的字段，默认 `created_at`、`updated_at`、`deleted_at`
 - `tags`：验证结构字段 tag，默认 `json`、`form`、`xml`、`url`
 - `insert_scene`、`update_scene`、`delete_scene`：验证场景名，默认 `insert`、`update`、`delete`
-- `type_mappings`：自定义数据库类型映射
+- `type_mappings`：自定义数据库类型到 Go 类型的映射
+- `field_mappings`：自定义数据库列名到 Go 类型的映射，优先级高于 `type_mappings`
 
 完整配置模板见 `generated.example.yaml` 和 `generated.example.toml`。
 
 ## 自定义类型映射
 
-当数据库中的类型需要映射为项目自定义类型时，可以在配置文件中设置 `type_mappings`：
+当数据库中的类型需要映射为项目自定义类型时，可以在配置文件中设置 `type_mappings`。键名是数据库类型（大小写不敏感，`TIMESTAMP(0)` 会按 `timestamp` 匹配），`go_type` 是生成的 Go 类型。
 
 ```yaml
 type_mappings:
@@ -80,6 +81,15 @@ type_mappings:
   jsonb:
     go_type: datatypes.JSON
     import_path: gorm.io/datatypes
+  date:
+    go_type: calendar.Date
+    import_path: pkg/calendar
+  datetime:
+    go_type: calendar.Datetime
+    import_path: pkg/calendar
+  timestamp:
+    go_type: calendar.Datetime
+    import_path: pkg/calendar
 ```
 
 TOML 写法：
@@ -92,9 +102,50 @@ import_path = "github.com/google/uuid"
 [type_mappings.jsonb]
 go_type = "datatypes.JSON"
 import_path = "gorm.io/datatypes"
+
+[type_mappings.date]
+go_type = "calendar.Date"
+import_path = "pkg/calendar"
+
+[type_mappings.TIMESTAMP]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
 ```
 
 该映射会同时影响 `gorm.io/gen` 生成的模型字段类型，以及验证器结构体字段类型和 import。
+
+达梦、Oracle 等驱动返回大写的类型名（如 `TIMESTAMP`），生成器会自动兼容大小写。
+
+## 自定义字段名映射
+
+当某个列名需要固定为特定 Go 类型、且应覆盖 `type_mappings` 时，使用 `field_mappings`。键名是数据库列名（大小写不敏感）。
+
+内置默认映射：
+
+| 列名 | Go 类型 | import |
+|------|---------|--------|
+| `deleted_at` | `gorm.DeletedAt` | `gorm.io/gorm` |
+
+可在配置中显式声明或覆盖：
+
+```yaml
+field_mappings:
+  deleted_at:
+    go_type: gorm.DeletedAt
+    import_path: gorm.io/gorm
+```
+
+TOML 写法：
+
+```toml
+[field_mappings.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+```
+
+可选字段 `gen_type` 用于指定 query 层 `field.NewXxx` 的类型名；留空时由 `gorm.io/gen` 自动推导。
+
+`field_mappings` 仅影响模型层（及 query 层字段类型推导），不影响验证结构体；`deleted_at` 等字段通常已在 `ignore_fields` 中排除。
 
 ## 数据库 DSN 示例
 

@@ -42,6 +42,8 @@ type Config struct {
 	DeleteScene string `json:"delete_scene" yaml:"delete_scene" toml:"delete_scene"`
 	// TypeMappings 是用户自定义的数据库类型到 Go 类型映射。
 	TypeMappings map[string]TypeMapping `json:"type_mappings" yaml:"type_mappings" toml:"type_mappings"`
+	// FieldMappings 是用户自定义的数据库列名到 Go 类型映射，优先级高于 TypeMappings。
+	FieldMappings map[string]FieldMapping `json:"field_mappings" yaml:"field_mappings" toml:"field_mappings"`
 }
 
 // TypeMapping 描述单个自定义类型映射。
@@ -70,7 +72,7 @@ func DefaultConfig() Config {
 
 // LoadDefaultConfig 按约定文件名加载配置。
 func LoadDefaultConfig() (Config, string, error) {
-	for _, path := range []string{"generated.yaml", "generated.yml", "generated.toml", "generator.yaml", "generator.yml", "generator.toml"} {
+	for _, path := range []string{"dlayer.yaml", "dlayer.yml", "dlayer.toml", "generated.yaml", "generated.yml", "generated.toml", "generator.yaml", "generator.yml", "generator.toml"} {
 		if _, err := os.Stat(path); err == nil {
 			cfg, err := LoadConfig(path)
 			return cfg, path, err
@@ -101,6 +103,7 @@ func LoadConfig(path string) (Config, error) {
 	}
 	cfg.ApplyDefaults()
 	normalizeTypeMappings(cfg.TypeMappings)
+	normalizeFieldMappings(cfg.FieldMappings)
 	if err := cfg.Validate(); err != nil {
 		return Config{}, fmt.Errorf("validate config %s: %w", path, err)
 	}

@@ -22,12 +22,15 @@ func generateORM(db *gorm.DB, cfg Config, tables []string) (err error) {
 		OutPath:           cfg.QueryOut,
 		ModelPkgPath:      cfg.ModelOut,
 		Mode:              gen.WithoutContext | gen.WithDefaultQuery | gen.WithQueryInterface,
-		FieldCoverable:    true,
+		FieldCoverable:    false,
+		FieldNullable:     false,
 		FieldSignable:     true,
 		FieldWithTypeTag:  true,
 		FieldWithIndexTag: true,
 		WithUnitTest:      false,
 	})
+	g.WithOpts(fieldMappingModelOpt(cfg), nullablePointerModelOpt())
+	g.WithImportPkgPath(fieldMappingImportPaths(cfg)...)
 
 	switch normalizeDriver(cfg.Driver) {
 	case "mysql", "tidb":
