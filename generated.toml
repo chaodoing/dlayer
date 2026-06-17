@@ -1,5 +1,5 @@
 driver = "postgres"
-dsn = "host=127.0.0.1 port=2345 user=postgres password=123.com dbname=cynt-optimized sslmode=disable"
+dsn = "host=127.0.0.1 port=5432 user=postgres password=secret dbname=demo sslmode=disable"
 out_dir = "generated"
 
 # 可选：不设置时默认使用 out_dir 下的 model/query/validator
@@ -20,7 +20,7 @@ insert_scene = "insert"
 update_scene = "update"
 delete_scene = "delete"
 
-# 自定义类型映射。表名是数据库类型，go_type 是生成的 Go 类型。
+# 自定义类型映射。键名是数据库类型（大小写不敏感），go_type 是生成的 Go 类型。
 [type_mappings.uuid]
 go_type = "uuid.UUID"
 import_path = "github.com/google/uuid"
@@ -28,3 +28,36 @@ import_path = "github.com/google/uuid"
 [type_mappings.jsonb]
 go_type = "datatypes.JSON"
 import_path = "gorm.io/datatypes"
+
+[type_mappings.json]
+go_type = "datatypes.JSON"
+import_path = "gorm.io/datatypes"
+
+[type_mappings.date]
+go_type = "calendar.Date"
+import_path = "pkg/calendar"
+
+[type_mappings.datetime]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[type_mappings.time]
+go_type = "calendar.Time"
+import_path = "pkg/calendar"
+
+[type_mappings.month]
+go_type = "calendar.Month"
+import_path = "pkg/calendar"
+
+[type_mappings.unix]
+go_type = "calendar.Unix"
+import_path = "pkg/calendar"
+
+[type_mappings.timestamp]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+# 自定义字段名映射，优先级高于 type_mappings。
+[field_mappings.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
