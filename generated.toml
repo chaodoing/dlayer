@@ -1,30 +1,54 @@
-driver = "postgres"
-dsn = "host=127.0.0.1 port=2345 user=postgres password=123.com dbname=cynt-optimized sslmode=disable"
-out_dir = "generated"
+driver = 'mysql'
+dsn = 'root:123.com@tcp(127.0.0.1:3306)/safes?charset=utf8mb4&parseTime=True&loc=Local'
+out_dir = 'generated'
+model_out = 'data-layer/models'
+query_out = 'data-layer/query'
+validator_out = 'data-layer/request'
+validator_package = 'request'
+tables = ['sys_action_log', 'sys_admin', 'sys_admin_profile', 'sys_album', 'sys_album_category', 'sys_config', 'sys_config_value', 'sys_dictionaries', 'sys_dictionary', 'sys_region', 'sys_role', 'sys_rule']
+table_prefix = 'sys_'
+ignore_fields = ['created_at', 'updated_at', 'deleted_at']
+tags = ['json', 'form', 'xml', 'url']
+insert_scene = 'insert'
+update_scene = 'update'
+delete_scene = 'delete'
 
-# 可选：不设置时默认使用 out_dir 下的 model/query/validator
-model_out = "./data-layer/models"
-query_out = "./data-layer/query"
-validator_out = "./data-layer/request"
-validator_package = "request"
-
-# 空数组表示生成全部表
-tables = []
-table_prefix = ""
-
-ignore_fields = ["created_at", "updated_at", "deleted_at"]
-
-tags = ["json", "form", "xml", "url"]
-
-insert_scene = "insert"
-update_scene = "update"
-delete_scene = "delete"
-
-# 自定义类型映射。表名是数据库类型，go_type 是生成的 Go 类型。
-[type_mappings.uuid]
-go_type = "uuid.UUID"
-import_path = "github.com/google/uuid"
-
+[type_mappings]
 [type_mappings.jsonb]
-go_type = "datatypes.JSON"
-import_path = "gorm.io/datatypes"
+db_type = 'jsonb'
+go_type = 'datatypes.JSON'
+import_path = 'gorm.io/datatypes'
+
+[type_mappings.uuid]
+db_type = 'uuid'
+go_type = 'uuid.UUID'
+import_path = 'github.com/google/uuid'
+
+[table_configs]
+[table_configs.safe_company]
+[table_configs.safe_company.fields]
+[table_configs.safe_company.fields.created_at]
+go_type = 'calendar.Datetime'
+import_path = 'github.com/chaodoing/pkg/calendar'
+
+[table_configs.safe_company.fields.deleted_at]
+go_type = 'gorm.DeletedAt'
+import_path = 'gorm.io/gorm'
+
+[table_configs.safe_company.fields.updated_at]
+go_type = '*calendar.Datetime'
+import_path = 'github.com/chaodoing/pkg/calendar'
+
+[table_configs.sys_admin]
+[table_configs.sys_admin.fields]
+[table_configs.sys_admin.fields.created_at]
+go_type = 'calendar.Datetime'
+import_path = 'github.com/chaodoing/pkg/calendar'
+
+[table_configs.sys_admin.fields.deleted_at]
+go_type = 'gorm.DeletedAt'
+import_path = 'gorm.io/gorm'
+
+[table_configs.sys_admin.fields.updated_at]
+go_type = '*calendar.Datetime'
+import_path = 'github.com/chaodoing/pkg/calendar'

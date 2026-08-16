@@ -63,11 +63,20 @@ func writeValidatorFile(cfg Config, table string, columns []gorm.ColumnType) err
 		tags = []string{"json", "form", "xml", "url"}
 	}
 
+	tableConfig, hasTableConfig := cfg.TableConfigs[table]
 	for _, column := range columns {
 		if ignore[column.Name()] {
 			continue
 		}
 		info := buildFieldInfo(cfg, column)
+		if hasTableConfig {
+			if fieldOverride, ok := tableConfig.Fields[column.Name()]; ok && strings.TrimSpace(fieldOverride.GoType) != "" {
+				info.Type = strings.TrimSpace(fieldOverride.GoType)
+				if strings.TrimSpace(fieldOverride.ImportPath) != "" {
+					imports[strings.TrimSpace(fieldOverride.ImportPath)] = struct{}{}
+				}
+			}
+		}
 		if importPath := importForType(cfg, info.Type); importPath != "" {
 			imports[importPath] = struct{}{}
 		}

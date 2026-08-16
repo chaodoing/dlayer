@@ -83,3 +83,69 @@ func resolveTables(db *gorm.DB, selected []string) ([]string, error) {
 	sort.Strings(tables)
 	return tables, nil
 }
+
+// TestDBConnection 测试数据库连接，成功时返回当前数据库中的全部表名。
+func TestDBConnection(driver, dsn string) ([]string, error) {
+	db, err := openDB(driver, dsn)
+	if err != nil {
+		return nil, err
+	}
+	sqlDB, err := db.DB()
+	if err == nil {
+		defer sqlDB.Close()
+	}
+
+	tables, err := db.Migrator().GetTables()
+	if err != nil {
+		return nil, fmt.Errorf("connection successful, but failed to list tables: %w", err)
+	}
+	sort.Strings(tables)
+	return tables, nil
+}
+
+// ColumnDetail 描述表单列的元数据（包括数据类型、是否可为空、默认 Go 类型等）。
+type ColumnDetail struct {
+	Name         string `json:"name"`
+	DatabaseType string `json:"database_type"`
+	GoType       string `json:"go_type"`
+	Nullable     bool   `json:"nullable"`
+	Primary      bool   `json:"primary"`
+	Comment      string `json:"comment"`
+}
+
+// GetTableColumns 连接数据库并返回指定表的详细列元数据。
+func GetTableColumns(driver, dsn, table string, cfg Config) ([]ColumnDetail, error) {
+	db, err := openDB(driver, dsn)
+	if err != nil {
+		return nil, err
+	}
+	sqlDB, err := db.DB()
+	if err == nil {
+		defer sqlDB.Close()
+	}
+
+	columnTypes, err := db.Migrator().ColumnTypes(table)
+	if err != nil {
+		return nil, fmt.Errorf("read column types for table %s: %w", table, err)
+	}
+
+	details := make([]ColumnDetail, 0, len(columnTypes))
+	for _, col := range columnTypes {
+		nullable, _ := col.Nullable()
+		primary, _ := col.PrimaryKey()
+		comment, _ := col.Comment()
+		inferredType := goTypeForColumn(cfg, col)
+
+		details = append(details, ColumnDetail{
+			Name:         col.Name(),
+			DatabaseType: col.DatabaseTypeName(),
+			GoType:       inferredType,
+			Nullable:     nullable,
+			Primary:      primary,
+			Comment:      comment,
+		})
+	}
+	return details, nil
+}
+
+

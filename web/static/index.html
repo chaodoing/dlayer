@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dlayer - GORM 模型 & 验证器生成器配置面板</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo-icon">⚡</div>
+        <div class="brand-text">
+          <h1>dlayer</h1>
+          <span class="badge">v1.0 Configurator</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="db">
+          <span class="icon">🔌</span>
+          <span class="label">数据库连接</span>
+        </button>
+        <button class="nav-item" data-tab="paths">
+          <span class="icon">📁</span>
+          <span class="label">输出路径配置</span>
+        </button>
+        <button class="nav-item" data-tab="tags">
+          <span class="icon">🏷️</span>
+          <span class="label">验证与 Tag 设置</span>
+        </button>
+        <button class="nav-item" data-tab="tables">
+          <span class="icon">📋</span>
+          <span class="label">数据库表选择</span>
+          <span class="badge count-badge" id="selected-table-count">全部</span>
+        </button>
+
+        <button class="nav-item" data-tab="mappings">
+          <span class="icon">⚙️</span>
+          <span class="label">全局类型映射</span>
+        </button>
+        <button class="nav-item" data-tab="table-fields">
+          <span class="icon">🧩</span>
+          <span class="label">单表字段类型配置</span>
+        </button>
+        <button class="nav-item" data-tab="generate">
+          <span class="icon">🚀</span>
+          <span class="label">代码生成 & 控制台</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="config-file-info">
+          <span class="text-muted">当前配置文件:</span>
+          <code id="active-config-path">generated.yaml</code>
+        </div>
+        <div class="quick-actions">
+          <button class="btn btn-secondary btn-sm" id="btn-save-config">💾 保存配置</button>
+          <button class="btn btn-outline btn-sm" id="btn-load-config">🔄 重新加载</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar Header -->
+      <header class="topbar">
+        <div class="topbar-title">
+          <h2 id="tab-title">🔌 数据库连接与测试</h2>
+          <p class="subtitle" id="tab-desc">配置目标数据库驱动及连接字符串 (DSN)，并实时获取数据表列表</p>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-primary" id="btn-top-generate">🚀 立即生成代码</button>
+        </div>
+      </header>
+
+      <div class="content-body">
+        <!-- Alert Banner Container -->
+        <div id="toast-container" class="toast-container"></div>
+
+        <!-- TAB 1: Database Connection -->
+        <section class="tab-panel active" id="panel-db">
+          <div class="card">
+            <div class="card-header">
+              <h3>数据库配置</h3>
+              <span class="subtext">支持 MySQL, TiDB, PostgreSQL, SQLite, SQL Server, ClickHouse, 达梦, Oracle, GaussDB</span>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="driver-select">数据库驱动 (Driver)</label>
+                <select id="driver-select" class="form-control">
+                  <!-- Dynamically populated -->
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="dsn-input">连接字符串 (DSN)</label>
+                <div class="input-with-button">
+                  <input type="text" id="dsn-input" class="form-control code-input" placeholder="输入数据库 DSN 连接串...">
+                  <button class="btn btn-secondary" id="btn-test-db">⚡ 测试连接并读取表</button>
+                </div>
+                <small class="form-hint" id="dsn-hint">示例: root:password@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local</small>
+              </div>
+
+              <div class="db-test-result" id="db-test-result" style="display: none;">
+                <!-- Output connection test status -->
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>常用驱动 DSN 模版参考</h3>
+            </div>
+            <div class="card-body">
+              <div class="presets-grid" id="presets-grid">
+                <!-- Driver preset cards populated by JS -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: Output Paths -->
+        <section class="tab-panel" id="panel-paths">
+          <div class="card">
+            <div class="card-header">
+              <h3>生成路径与包名设置</h3>
+              <span class="subtext">配置代码生成的输出目录及 Validator 包名称</span>
+            </div>
+            <div class="card-body form-grid">
+              <div class="form-group col-12">
+                <label for="out-dir">根输出目录 (OutDir)</label>
+                <input type="text" id="out-dir" class="form-control" value="generated">
+                <small class="form-hint">未显式指定子路径时，其余输出目录将基于此根目录扩展</small>
+              </div>
+
+              <div class="form-group col-6">
+                <label for="model-out">gorm.io/gen 模型输出目录 (ModelOut)</label>
+                <input type="text" id="model-out" class="form-control" value="generated/model">
+              </div>
+
+              <div class="form-group col-6">
+                <label for="query-out">gorm.io/gen Query 操作层目录 (QueryOut)</label>
+                <input type="text" id="query-out" class="form-control" value="generated/query">
+              </div>
+
+              <div class="form-group col-6">
+                <label for="validator-out">验证器结构输出目录 (ValidatorOut)</label>
+                <input type="text" id="validator-out" class="form-control" value="generated/validator">
+              </div>
+
+              <div class="form-group col-6">
+                <label for="validator-pkg">验证器包名 (ValidatorPackage)</label>
+                <input type="text" id="validator-pkg" class="form-control" value="validator">
+              </div>
+
+              <div class="form-group col-12">
+                <label for="table-prefix">表名前缀裁剪 (TablePrefix)</label>
+                <input type="text" id="table-prefix" class="form-control" placeholder="例如: tb_ 或 sys_">
+                <small class="form-hint">从表名中剥离公共前缀，例如 tb_users 将生成 User 模型和 UserRequest 验证结构体</small>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3: Validation & Tags -->
+        <section class="tab-panel" id="panel-tags">
+          <div class="card">
+            <div class="card-header">
+              <h3>验证器与 Tag 配置</h3>
+              <span class="subtext">控制请求结构体生成的 Tag 名称、忽略字段与验证场景</span>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>结构体 Tag (Tags)</label>
+                <div class="tag-input-container" id="tags-wrapper">
+                  <!-- Tag pills rendered by JS -->
+                  <input type="text" id="tag-input-field" placeholder="+ 按 Enter 添加 Tag (例如: json, form, xml, url)">
+                </div>
+                <small class="form-hint">生成结构体字段上的 Tag 属性，例如 `json:"name" form:"name" xml:"name"`</small>
+              </div>
+
+              <div class="form-group">
+                <label>忽略校验字段 (IgnoreFields)</label>
+                <div class="tag-input-container" id="ignore-wrapper">
+                  <!-- Ignore field pills rendered by JS -->
+                  <input type="text" id="ignore-input-field" placeholder="+ 按 Enter 追加忽略字段 (例如: created_at, updated_at)">
+                </div>
+                <small class="form-hint">生成验证结构体时忽略的数据库列，默认自动忽略 created_at, updated_at, deleted_at</small>
+              </div>
+
+              <div class="scenes-grid">
+                <div class="form-group">
+                  <label for="insert-scene">新增场景名 (InsertScene)</label>
+                  <input type="text" id="insert-scene" class="form-control" value="insert">
+                </div>
+                <div class="form-group">
+                  <label for="update-scene">更新场景名 (UpdateScene)</label>
+                  <input type="text" id="update-scene" class="form-control" value="update">
+                </div>
+                <div class="form-group">
+                  <label for="delete-scene">删除场景名 (DeleteScene)</label>
+                  <input type="text" id="delete-scene" class="form-control" value="delete">
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: Table Picker -->
+        <section class="tab-panel" id="panel-tables">
+          <div class="card">
+            <div class="card-header flex-between">
+              <div>
+                <h3>数据库表过滤 & 选择</h3>
+                <span class="subtext">留空或选择全部时，默认生成当前数据库所有表</span>
+              </div>
+              <div class="table-actions">
+                <button class="btn btn-sm btn-outline" id="btn-select-all-tables">全选</button>
+                <button class="btn btn-sm btn-outline" id="btn-clear-tables">清空选择 (生成全部)</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <input type="text" id="table-search-input" class="form-control" placeholder="🔍 搜索表名...">
+              </div>
+
+              <div class="tables-grid" id="tables-grid">
+                <div class="empty-state">
+                  <span>💡 尚未获取数据库表列表，请先在“数据库连接”页面测试连接。</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 5: Type Mappings -->
+        <section class="tab-panel" id="panel-mappings">
+          <div class="card">
+            <div class="card-header flex-between">
+              <div>
+                <h3>全局数据库类型映射 (Type Mappings)</h3>
+                <span class="subtext">支持将数据库中的字段类型全局映射为特定的 Go 类型（如 uuid.UUID, datatypes.JSON）</span>
+              </div>
+              <button class="btn btn-sm btn-secondary" id="btn-add-mapping">+ 添加映射项</button>
+            </div>
+            <div class="card-body">
+              <div class="preset-buttons">
+                <span class="text-muted">快速模版:</span>
+                <button class="btn btn-xs btn-outline" id="preset-uuid">+ UUID 映射</button>
+                <button class="btn btn-xs btn-outline" id="preset-jsonb">+ JSONB 映射</button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table" id="mappings-table">
+                  <thead>
+                    <tr>
+                      <th>数据库类型 (DBType)</th>
+                      <th>Go 类型 (GoType)</th>
+                      <th>Import 路径 (ImportPath)</th>
+                      <th style="width: 80px;">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mappings-body">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 6: Per-Table Field Overrides -->
+        <section class="tab-panel" id="panel-table-fields">
+          <div class="card">
+            <div class="card-header flex-between">
+              <div>
+                <h3>单表独立字段类型配置 (Table Field Overrides)</h3>
+                <span class="subtext">针对特定表中的列独立配置 Go 类型和 Import 路径，ORM 模型和验证器结构将同步生成</span>
+              </div>
+              <div class="flex-gap">
+                <select id="table-field-selector" class="form-control" style="min-width: 220px;">
+                  <option value="">-- 选择数据表 --</option>
+                </select>
+                <button class="btn btn-sm btn-secondary" id="btn-fetch-table-fields">🔄 载入字段</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="table-fields-editor-container">
+                <div class="empty-state">
+                  <span>💡 请在右上角下拉列表中选择需要单独配置字段类型的数据库表。</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 6: Generate & Logs -->
+        <section class="tab-panel" id="panel-generate">
+          <div class="card">
+            <div class="card-header flex-between">
+              <div>
+                <h3>执行代码生成</h3>
+                <span class="subtext">自动基于 GORM & gookit/validate 生成模型、query 查询层与请求校验代码</span>
+              </div>
+              <div class="flex-gap">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="chk-auto-save" checked>
+                  生成前自动保存配置
+                </label>
+                <button class="btn btn-primary btn-lg" id="btn-run-generate">🚀 立即生成</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="console-box" id="console-box">
+                <div class="console-header">
+                  <span>📟 控制台日志与输出</span>
+                  <button class="btn-clear-log" id="btn-clear-log">清空日志</button>
+                </div>
+                <pre class="console-output" id="console-output">Ready. 点击“立即生成”按钮开始代码生成流程...</pre>
+              </div>
+
+              <div class="result-files-card" id="result-files-card" style="display: none;">
+                <h4>🎉 已成功生成的代码文件列表:</h4>
+                <ul class="file-list" id="generated-files-list">
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

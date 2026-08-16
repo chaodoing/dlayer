@@ -2,6 +2,7 @@
 package generator
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -40,8 +41,21 @@ type Config struct {
 	InsertScene string `json:"insert_scene" yaml:"insert_scene" toml:"insert_scene"`
 	UpdateScene string `json:"update_scene" yaml:"update_scene" toml:"update_scene"`
 	DeleteScene string `json:"delete_scene" yaml:"delete_scene" toml:"delete_scene"`
-	// TypeMappings 是用户自定义的数据库类型到 Go 类型映射。
+	// TypeMappings 是用户自定义的全局数据库类型到 Go 类型映射。
 	TypeMappings map[string]TypeMapping `json:"type_mappings" yaml:"type_mappings" toml:"type_mappings"`
+	// TableConfigs 是按表名独立配置的字段类型映射。
+	TableConfigs map[string]TableConfig `json:"table_configs" yaml:"table_configs" toml:"table_configs"`
+}
+
+// TableConfig 描述单张表级别的独立字段配置。
+type TableConfig struct {
+	Fields map[string]FieldTypeConfig `json:"fields" yaml:"fields" toml:"fields"`
+}
+
+// FieldTypeConfig 描述单张表中某个列字段自定义的 Go 类型及导入路径。
+type FieldTypeConfig struct {
+	GoType     string `json:"go_type" yaml:"go_type" toml:"go_type"`
+	ImportPath string `json:"import_path" yaml:"import_path" toml:"import_path"`
 }
 
 // TypeMapping 描述单个自定义类型映射。
@@ -100,6 +114,7 @@ func LoadConfig(path string) (Config, error) {
 		return Config{}, fmt.Errorf("unsupported config file extension %q", filepath.Ext(path))
 	}
 	cfg.ApplyDefaults()
+	cfg.resolveOutputPaths(filepath.Dir(path))
 	normalizeTypeMappings(cfg.TypeMappings)
 	if err := cfg.Validate(); err != nil {
 		return Config{}, fmt.Errorf("validate config %s: %w", path, err)
@@ -143,6 +158,23 @@ func (c *Config) ApplyDefaults() {
 	if c.DeleteScene == "" {
 		c.DeleteScene = defaults.DeleteScene
 	}
+}
+
+// resolveOutputPaths 将相对输出目录解析为基于配置文件所在目录的绝对路径。
+func (c *Config) resolveOutputPaths(baseDir string) {
+	baseDir = filepath.Clean(baseDir)
+	c.OutDir = resolvePath(baseDir, c.OutDir)
+	c.ModelOut = resolvePath(baseDir, c.ModelOut)
+	c.QueryOut = resolvePath(baseDir, c.QueryOut)
+	c.ValidatorOut = resolvePath(baseDir, c.ValidatorOut)
+}
+
+func resolvePath(baseDir, path string) string {
+	path = strings.TrimSpace(path)
+	if path == "" || filepath.IsAbs(path) {
+		return path
+	}
+	return filepath.Join(baseDir, path)
 }
 
 // Validate 检查必需配置和数据库驱动是否有效。
@@ -270,3 +302,98 @@ func normalizeTypeKey(value string) string {
 	}
 	return value
 }
+
+// SaveConfig 将配置保存至指定路径 (支持 .yaml, .yml, .toml, .json)。
+func SaveConfig(path string, cfg Config) error {
+	ext := strings.ToLower(filepath.Ext(path))
+	var data []byte
+	var err error
+
+	switch ext {
+	case ".yaml", ".yml":
+		data, err = yaml.Marshal(cfg)
+	case ".toml":
+		data, err = toml.Marshal(cfg)
+	case ".json":
+		data, err = json.MarshalIndent(cfg, "", "  ")
+	default:
+		return fmt.Errorf("unsupported config extension %q (supported: .yaml, .yml, .toml, .json)", ext)
+	}
+	if err != nil {
+		return fmt.Errorf("marshal config: %w", err)
+	}
+
+	if dir := filepath.Dir(path); dir != "" && dir != "." {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return fmt.Errorf("create config dir %s: %w", dir, err)
+		}
+	}
+
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return fmt.Errorf("write config %s: %w", path, err)
+	}
+	return nil
+}
+
+// DriverMeta 描述受支持数据库驱动的信息和 DSN 示例。
+type DriverMeta struct {
+	Name        string `json:"name"`
+	Label       string `json:"label"`
+	ExampleDSN  string `json:"example_dsn"`
+	Description string `json:"description"`
+}
+
+// SupportedDrivers 返回所有支持的数据库驱动及其 DSN 示例说明。
+func SupportedDrivers() []DriverMeta {
+	return []DriverMeta{
+		{
+			Name:        "mysql",
+			Label:       "MySQL / TiDB",
+			ExampleDSN:  "root:password@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local",
+			Description: "MySQL 和兼容 MySQL 协议的数据库（如 TiDB）",
+		},
+		{
+			Name:        "postgres",
+			Label:       "PostgreSQL",
+			ExampleDSN:  "host=127.0.0.1 port=5432 user=postgres password=secret dbname=demo sslmode=disable",
+			Description: "PostgreSQL 关系型数据库",
+		},
+		{
+			Name:        "sqlite",
+			Label:       "SQLite",
+			ExampleDSN:  "./demo.db",
+			Description: "SQLite 本地嵌入式单文件数据库",
+		},
+		{
+			Name:        "gaussdb",
+			Label:       "GaussDB / openGauss",
+			ExampleDSN:  "host=127.0.0.1 port=8000 user=gauss password=secret dbname=demo sslmode=disable",
+			Description: "华为 GaussDB / openGauss 数据库",
+		},
+		{
+			Name:        "sqlserver",
+			Label:       "SQL Server",
+			ExampleDSN:  "sqlserver://sa:password@127.0.0.1:1433?database=demo",
+			Description: "Microsoft SQL Server 数据库",
+		},
+		{
+			Name:        "clickhouse",
+			Label:       "ClickHouse",
+			ExampleDSN:  "clickhouse://default:password@127.0.0.1:9000/default?dial_timeout=10s",
+			Description: "ClickHouse 列式分析型数据库",
+		},
+		{
+			Name:        "dm",
+			Label:       "达梦 (DM8)",
+			ExampleDSN:  "dm://SYSDBA:SYSDBA@127.0.0.1:5236?schema=SYSDBA",
+			Description: "国产达梦数据库 DM8",
+		},
+		{
+			Name:        "oracle",
+			Label:       "Oracle",
+			ExampleDSN:  "oracle://user:password@127.0.0.1:1521/service",
+			Description: "Oracle 关系型数据库",
+		},
+	}
+}
+
