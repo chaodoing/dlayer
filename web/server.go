@@ -113,7 +113,7 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 		cfg = generator.DefaultConfig()
 		cfg.ApplyDefaults()
 		if loadedPath == "" {
-			loadedPath = "generated.yaml"
+			loadedPath = "dlayer.yaml"
 		}
 	}
 
@@ -145,7 +145,7 @@ func (s *Server) handleSaveConfig(w http.ResponseWriter, r *http.Request) {
 
 	savePath := req.Path
 	if strings.TrimSpace(savePath) == "" {
-		savePath = "generated.yaml"
+		savePath = "dlayer.yaml"
 	}
 
 	req.Config.ApplyDefaults()

@@ -107,3 +107,72 @@ func TestTableConfigsSaveAndLoad(t *testing.T) {
 	}
 }
 
+func TestCommentedTOMLSaveAndLoad(t *testing.T) {
+	tempDir := t.TempDir()
+	configPath := filepath.Join(tempDir, "table_config.toml")
+
+	cfg := generator.DefaultConfig()
+	cfg.Driver = "sqlite"
+	cfg.DSN = "./demo.db"
+	cfg.TableConfigs = map[string]generator.TableConfig{
+		"sys_admin": {
+			Fields: map[string]generator.FieldTypeConfig{
+				"avatar": {
+					GoType:     "custom.AvatarUrl",
+					ImportPath: "myproject/pkg/custom",
+				},
+			},
+		},
+	}
+
+	if err := generator.SaveConfig(configPath, cfg); err != nil {
+		t.Fatalf("SaveConfig failed: %v", err)
+	}
+
+	loaded, err := generator.LoadConfig(configPath)
+	if err != nil {
+		t.Fatalf("LoadConfig failed: %v", err)
+	}
+
+	if loaded.Driver != "sqlite" {
+		t.Errorf("expected driver sqlite, got %s", loaded.Driver)
+	}
+	tCfg, ok := loaded.TableConfigs["sys_admin"]
+	if !ok {
+		t.Fatalf("expected sys_admin in TableConfigs")
+	}
+	fCfg, ok := tCfg.Fields["avatar"]
+	if !ok {
+		t.Fatalf("expected avatar in sys_admin fields")
+	}
+	if fCfg.GoType != "custom.AvatarUrl" {
+		t.Errorf("expected custom.AvatarUrl, got %s", fCfg.GoType)
+	}
+}
+
+func TestOutDirResolution(t *testing.T) {
+	cfg := generator.Config{
+		OutDir:       "data-layer",
+		ModelOut:     "models",
+		QueryOut:     "query",
+		ValidatorOut: "request",
+	}
+	cfg.ApplyDefaults()
+
+	expectedModel := filepath.Join("data-layer", "models")
+	expectedQuery := filepath.Join("data-layer", "query")
+	expectedValidator := filepath.Join("data-layer", "request")
+
+	if cfg.ModelOut != expectedModel {
+		t.Errorf("expected ModelOut %s, got %s", expectedModel, cfg.ModelOut)
+	}
+	if cfg.QueryOut != expectedQuery {
+		t.Errorf("expected QueryOut %s, got %s", expectedQuery, cfg.QueryOut)
+	}
+	if cfg.ValidatorOut != expectedValidator {
+		t.Errorf("expected ValidatorOut %s, got %s", expectedValidator, cfg.ValidatorOut)
+	}
+}
+
+
+

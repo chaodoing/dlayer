@@ -45,20 +45,20 @@ go run ./cmd/dlayer -web -port 8999
 
 ### 方式 2：使用 CLI 命令行工具
 
-1. 复制配置文件模板并修改数据库连接参数：
+1. 复制配置文件模板并修改数据库连接参数（默认配置文件依次按 `dlayer.yaml` / `dlayer.yml` / `dlayer.toml` / `dlayer.json` 自动查找）：
 
 ```bash
-cp generated.example.yaml generated.yaml
+cp dlayer.example.yaml dlayer.yaml
 # 或
-cp generated.example.toml generated.toml
+cp dlayer.example.toml dlayer.toml
 ```
 
 2. 执行生成命令：
 
 ```bash
 go run ./cmd/dlayer
-# 或指定配置文件路径
-go run ./cmd/dlayer -config ./configs/dev.yaml
+# 或显式指定配置文件路径
+go run ./cmd/dlayer -config ./dlayer.toml
 ```
 
 默认会在输出根目录下生成：

@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Global State
   let appState = {
     drivers: [],
-    configPath: 'generated.yaml',
+    configPath: 'dlayer.yaml',
     config: {
       driver: 'mysql',
       dsn: '',
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!appState.config.table_configs) {
           appState.config.table_configs = {};
         }
-        appState.configPath = data.path || 'generated.yaml';
+        appState.configPath = data.path || 'dlayer.yaml';
         document.getElementById('active-config-path').textContent = appState.configPath;
         bindConfigToUI();
 
@@ -672,7 +672,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Save Config API Call
   async function saveConfig() {
     const cfg = collectConfigFromUI();
-    const path = appState.configPath || 'generated.yaml';
+    const path = appState.configPath || 'dlayer.yaml';
 
     try {
       const res = await fetch('/api/config/save', {
@@ -696,7 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function runGenerate() {
     const cfg = collectConfigFromUI();
     const autoSave = document.getElementById('chk-auto-save').checked;
-    const savePath = appState.configPath || 'generated.yaml';
+    const savePath = appState.configPath || 'dlayer.yaml';
 
     const outputEl = document.getElementById('console-output');
     const resultFilesCard = document.getElementById('result-files-card');

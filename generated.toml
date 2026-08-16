@@ -1,54 +1,72 @@
-driver = 'mysql'
-dsn = 'root:123.com@tcp(127.0.0.1:3306)/safes?charset=utf8mb4&parseTime=True&loc=Local'
-out_dir = 'generated'
-model_out = 'data-layer/models'
-query_out = 'data-layer/query'
-validator_out = 'data-layer/request'
-validator_package = 'request'
-tables = ['sys_action_log', 'sys_admin', 'sys_admin_profile', 'sys_album', 'sys_album_category', 'sys_config', 'sys_config_value', 'sys_dictionaries', 'sys_dictionary', 'sys_region', 'sys_role', 'sys_rule']
-table_prefix = 'sys_'
-ignore_fields = ['created_at', 'updated_at', 'deleted_at']
-tags = ['json', 'form', 'xml', 'url']
-insert_scene = 'insert'
-update_scene = 'update'
-delete_scene = 'delete'
+# ==============================================================================
+# dlayer 代码生成器配置文件 (TOML 格式)
+# ==============================================================================
 
-[type_mappings]
+# 数据库驱动，支持 mysql, tidb, postgres, gaussdb, sqlite, sqlserver, clickhouse, dm, oracle
+driver = "mysql"
+
+# 数据库连接字符串 (DSN)
+dsn = "root:123.com@tcp(127.0.0.1:3306)/safes?charset=utf8mb4&parseTime=True&loc=Local"
+
+# 代码生成根输出目录
+out_dir = "data-layer"
+
+# 子目录输出配置 (留空时基于 out_dir 扩展)
+model_out = "data-layer/models"
+query_out = "data-layer/query"
+validator_out = "data-layer/request"
+validator_package = "request"
+
+# 数据库表过滤 (为空数组 [] 时默认生成数据库中的全部表)
+tables = ["sys_action_log", "sys_admin", "sys_admin_profile", "sys_album", "sys_album_category", "sys_config", "sys_config_value", "sys_dictionaries", "sys_dictionary", "sys_region", "sys_role", "sys_rule"]
+
+# 表名前缀裁剪 (如 sys_，生成模型与结构体名称时会自动剥离该前缀)
+table_prefix = "sys_"
+
+# 生成验证结构时跳过的数据库列
+ignore_fields = ["created_at", "updated_at", "deleted_at"]
+
+# 验证结构体字段上生成的 Tag 名称
+tags = ["json", "form", "xml", "url"]
+
+# gookit/validate 场景名称配置
+insert_scene = "insert"
+update_scene = "update"
+delete_scene = "delete"
+
+# 全局数据库数据类型到 Go 类型的映射
 [type_mappings.jsonb]
-db_type = 'jsonb'
-go_type = 'datatypes.JSON'
-import_path = 'gorm.io/datatypes'
+db_type = "jsonb"
+go_type = "datatypes.JSON"
+import_path = "gorm.io/datatypes"
 
 [type_mappings.uuid]
-db_type = 'uuid'
-go_type = 'uuid.UUID'
-import_path = 'github.com/google/uuid'
+db_type = "uuid"
+go_type = "uuid.UUID"
+import_path = "github.com/google/uuid"
 
-[table_configs]
-[table_configs.safe_company]
-[table_configs.safe_company.fields]
+# 按数据表独立配置的字段 Go 类型与 Import 路径
 [table_configs.safe_company.fields.created_at]
-go_type = 'calendar.Datetime'
-import_path = 'github.com/chaodoing/pkg/calendar'
+go_type = "calendar.Datetime"
+import_path = "github.com/chaodoing/pkg/calendar"
 
 [table_configs.safe_company.fields.deleted_at]
-go_type = 'gorm.DeletedAt'
-import_path = 'gorm.io/gorm'
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
 
 [table_configs.safe_company.fields.updated_at]
-go_type = '*calendar.Datetime'
-import_path = 'github.com/chaodoing/pkg/calendar'
+go_type = "*calendar.Datetime"
+import_path = "github.com/chaodoing/pkg/calendar"
 
-[table_configs.sys_admin]
-[table_configs.sys_admin.fields]
 [table_configs.sys_admin.fields.created_at]
-go_type = 'calendar.Datetime'
-import_path = 'github.com/chaodoing/pkg/calendar'
+go_type = "calendar.Datetime"
+import_path = "github.com/chaodoing/pkg/calendar"
 
 [table_configs.sys_admin.fields.deleted_at]
-go_type = 'gorm.DeletedAt'
-import_path = 'gorm.io/gorm'
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
 
 [table_configs.sys_admin.fields.updated_at]
-go_type = '*calendar.Datetime'
-import_path = 'github.com/chaodoing/pkg/calendar'
+go_type = "*calendar.Datetime"
+import_path = "github.com/chaodoing/pkg/calendar"
+

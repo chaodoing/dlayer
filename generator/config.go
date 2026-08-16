@@ -2,6 +2,7 @@
 package generator
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -84,13 +85,17 @@ func DefaultConfig() Config {
 
 // LoadDefaultConfig 按约定文件名加载配置。
 func LoadDefaultConfig() (Config, string, error) {
-	for _, path := range []string{"generated.yaml", "generated.yml", "generated.toml", "generator.yaml", "generator.yml", "generator.toml"} {
+	for _, path := range []string{
+		"dlayer.yaml", "dlayer.yml", "dlayer.toml", "dlayer.json",
+		"generated.yaml", "generated.yml", "generated.toml",
+		"generator.yaml", "generator.yml", "generator.toml",
+	} {
 		if _, err := os.Stat(path); err == nil {
 			cfg, err := LoadConfig(path)
 			return cfg, path, err
 		}
 	}
-	return Config{}, "", errors.New("config file not found: create generated.yaml, generated.toml, generator.yaml, or generator.toml")
+	return Config{}, "", errors.New("config file not found: create dlayer.yaml, dlayer.toml, generated.yaml, or generator.yaml")
 }
 
 // LoadConfig 从 YAML 或 TOML 配置文件加载生成配置。
@@ -131,15 +136,11 @@ func (c *Config) ApplyDefaults() {
 	if c.OutDir == "" {
 		c.OutDir = defaults.OutDir
 	}
-	if c.ModelOut == "" {
-		c.ModelOut = c.OutDir + "/model"
-	}
-	if c.QueryOut == "" {
-		c.QueryOut = c.OutDir + "/query"
-	}
-	if c.ValidatorOut == "" {
-		c.ValidatorOut = c.OutDir + "/validator"
-	}
+
+	c.ModelOut = resolveSubOut(c.OutDir, c.ModelOut, "model")
+	c.QueryOut = resolveSubOut(c.OutDir, c.QueryOut, "query")
+	c.ValidatorOut = resolveSubOut(c.OutDir, c.ValidatorOut, "validator")
+
 	if c.ValidatorPackage == "" {
 		c.ValidatorPackage = defaults.ValidatorPackage
 	}
@@ -158,6 +159,36 @@ func (c *Config) ApplyDefaults() {
 	if c.DeleteScene == "" {
 		c.DeleteScene = defaults.DeleteScene
 	}
+}
+
+// resolveSubOut 将子输出路径解析为位于 outDir 根目录下的相对路径。
+func resolveSubOut(outDir, subOut, defaultSub string) string {
+	outDir = strings.TrimSpace(outDir)
+	subOut = strings.TrimSpace(subOut)
+
+	if subOut == "" {
+		if outDir == "" {
+			return defaultSub
+		}
+		return filepath.Join(outDir, defaultSub)
+	}
+
+	if filepath.IsAbs(subOut) {
+		return subOut
+	}
+
+	if outDir == "" || outDir == "." {
+		return subOut
+	}
+
+	cleanOutDir := filepath.Clean(outDir)
+	cleanSubOut := filepath.Clean(subOut)
+
+	if cleanSubOut == cleanOutDir || strings.HasPrefix(cleanSubOut, cleanOutDir+string(filepath.Separator)) {
+		return cleanSubOut
+	}
+
+	return filepath.Join(cleanOutDir, cleanSubOut)
 }
 
 // resolveOutputPaths 将相对输出目录解析为基于配置文件所在目录的绝对路径。
@@ -303,7 +334,7 @@ func normalizeTypeKey(value string) string {
 	return value
 }
 
-// SaveConfig 将配置保存至指定路径 (支持 .yaml, .yml, .toml, .json)。
+// SaveConfig 将配置带丰富注释保存至指定路径 (支持 .yaml, .yml, .toml, .json)。
 func SaveConfig(path string, cfg Config) error {
 	ext := strings.ToLower(filepath.Ext(path))
 	var data []byte
@@ -311,9 +342,9 @@ func SaveConfig(path string, cfg Config) error {
 
 	switch ext {
 	case ".yaml", ".yml":
-		data, err = yaml.Marshal(cfg)
+		data, err = formatCommentedYAML(cfg)
 	case ".toml":
-		data, err = toml.Marshal(cfg)
+		data, err = formatCommentedTOML(cfg)
 	case ".json":
 		data, err = json.MarshalIndent(cfg, "", "  ")
 	default:
@@ -333,6 +364,188 @@ func SaveConfig(path string, cfg Config) error {
 		return fmt.Errorf("write config %s: %w", path, err)
 	}
 	return nil
+}
+
+// formatCommentedYAML 生成带丰富中文注释的 YAML 配置文件内容。
+func formatCommentedYAML(cfg Config) ([]byte, error) {
+	var buf bytes.Buffer
+	buf.WriteString("# ==============================================================================\n")
+	buf.WriteString("# dlayer 代码生成器配置文件\n")
+	buf.WriteString("# ==============================================================================\n\n")
+
+	buf.WriteString("# 数据库驱动，支持 mysql, tidb, postgres, gaussdb, sqlite, sqlserver, clickhouse, dm, oracle\n")
+	fmt.Fprintf(&buf, "driver: %q\n\n", cfg.Driver)
+
+	buf.WriteString("# 数据库连接字符串 (DSN)\n")
+	fmt.Fprintf(&buf, "dsn: %q\n\n", cfg.DSN)
+
+	buf.WriteString("# 代码生成根输出目录\n")
+	fmt.Fprintf(&buf, "out_dir: %q\n\n", cfg.OutDir)
+
+	buf.WriteString("# 子目录输出配置 (留空时基于 out_dir 扩展)\n")
+	fmt.Fprintf(&buf, "model_out: %q\n", cfg.ModelOut)
+	fmt.Fprintf(&buf, "query_out: %q\n", cfg.QueryOut)
+	fmt.Fprintf(&buf, "validator_out: %q\n", cfg.ValidatorOut)
+	fmt.Fprintf(&buf, "validator_package: %q\n\n", cfg.ValidatorPackage)
+
+	buf.WriteString("# 数据库表过滤 (为空数组 [] 时默认生成数据库中的全部表)\n")
+	if len(cfg.Tables) == 0 {
+		buf.WriteString("tables: []\n\n")
+	} else {
+		buf.WriteString("tables:\n")
+		for _, t := range cfg.Tables {
+			fmt.Fprintf(&buf, "  - %q\n", t)
+		}
+		buf.WriteString("\n")
+	}
+
+	buf.WriteString("# 表名前缀裁剪 (如 sys_，生成模型与结构体名称时会自动剥离该前缀)\n")
+	fmt.Fprintf(&buf, "table_prefix: %q\n\n", cfg.TablePrefix)
+
+	buf.WriteString("# 生成验证结构时跳过的数据库列\n")
+	if len(cfg.IgnoreFields) == 0 {
+		buf.WriteString("ignore_fields: []\n\n")
+	} else {
+		buf.WriteString("ignore_fields:\n")
+		for _, f := range cfg.IgnoreFields {
+			fmt.Fprintf(&buf, "  - %q\n", f)
+		}
+		buf.WriteString("\n")
+	}
+
+	buf.WriteString("# 验证结构体字段上生成的 Tag 名称\n")
+	if len(cfg.Tags) == 0 {
+		buf.WriteString("tags: []\n\n")
+	} else {
+		buf.WriteString("tags:\n")
+		for _, tag := range cfg.Tags {
+			fmt.Fprintf(&buf, "  - %q\n", tag)
+		}
+		buf.WriteString("\n")
+	}
+
+	buf.WriteString("# gookit/validate 场景名称配置\n")
+	fmt.Fprintf(&buf, "insert_scene: %q\n", cfg.InsertScene)
+	fmt.Fprintf(&buf, "update_scene: %q\n", cfg.UpdateScene)
+	fmt.Fprintf(&buf, "delete_scene: %q\n\n", cfg.DeleteScene)
+
+	buf.WriteString("# 全局数据库数据类型到 Go 类型的映射\n")
+	if len(cfg.TypeMappings) == 0 {
+		buf.WriteString("type_mappings: {}\n\n")
+	} else {
+		buf.WriteString("type_mappings:\n")
+		for _, key := range sortedKeys(cfg.TypeMappings) {
+			tm := cfg.TypeMappings[key]
+			fmt.Fprintf(&buf, "  %s:\n", key)
+			fmt.Fprintf(&buf, "    db_type: %q\n", tm.DBType)
+			fmt.Fprintf(&buf, "    go_type: %q\n", tm.GoType)
+			fmt.Fprintf(&buf, "    import_path: %q\n", tm.ImportPath)
+		}
+		buf.WriteString("\n")
+	}
+
+	buf.WriteString("# 按数据表独立配置的字段 Go 类型与 Import 路径\n")
+	if len(cfg.TableConfigs) == 0 {
+		buf.WriteString("table_configs: {}\n")
+	} else {
+		buf.WriteString("table_configs:\n")
+		for _, tbl := range sortedKeys(cfg.TableConfigs) {
+			tCfg := cfg.TableConfigs[tbl]
+			fmt.Fprintf(&buf, "  %s:\n", tbl)
+			buf.WriteString("    fields:\n")
+			for _, fName := range sortedKeys(tCfg.Fields) {
+				fCfg := tCfg.Fields[fName]
+				fmt.Fprintf(&buf, "      %s:\n", fName)
+				fmt.Fprintf(&buf, "        go_type: %q\n", fCfg.GoType)
+				fmt.Fprintf(&buf, "        import_path: %q\n", fCfg.ImportPath)
+			}
+		}
+	}
+
+	return buf.Bytes(), nil
+}
+
+// formatCommentedTOML 生成带丰富中文注释的 TOML 配置文件内容。
+func formatCommentedTOML(cfg Config) ([]byte, error) {
+	var buf bytes.Buffer
+	buf.WriteString("# ==============================================================================\n")
+	buf.WriteString("# dlayer 代码生成器配置文件 (TOML 格式)\n")
+	buf.WriteString("# ==============================================================================\n\n")
+
+	buf.WriteString("# 数据库驱动，支持 mysql, tidb, postgres, gaussdb, sqlite, sqlserver, clickhouse, dm, oracle\n")
+	fmt.Fprintf(&buf, "driver = %q\n\n", cfg.Driver)
+
+	buf.WriteString("# 数据库连接字符串 (DSN)\n")
+	fmt.Fprintf(&buf, "dsn = %q\n\n", cfg.DSN)
+
+	buf.WriteString("# 代码生成根输出目录\n")
+	fmt.Fprintf(&buf, "out_dir = %q\n\n", cfg.OutDir)
+
+	buf.WriteString("# 子目录输出配置 (留空时基于 out_dir 扩展)\n")
+	fmt.Fprintf(&buf, "model_out = %q\n", cfg.ModelOut)
+	fmt.Fprintf(&buf, "query_out = %q\n", cfg.QueryOut)
+	fmt.Fprintf(&buf, "validator_out = %q\n", cfg.ValidatorOut)
+	fmt.Fprintf(&buf, "validator_package = %q\n\n", cfg.ValidatorPackage)
+
+	buf.WriteString("# 数据库表过滤 (为空数组 [] 时默认生成数据库中的全部表)\n")
+	buf.WriteString("tables = [")
+	for i, t := range cfg.Tables {
+		if i > 0 {
+			buf.WriteString(", ")
+		}
+		fmt.Fprintf(&buf, "%q", t)
+	}
+	buf.WriteString("]\n\n")
+
+	buf.WriteString("# 表名前缀裁剪 (如 sys_，生成模型与结构体名称时会自动剥离该前缀)\n")
+	fmt.Fprintf(&buf, "table_prefix = %q\n\n", cfg.TablePrefix)
+
+	buf.WriteString("# 生成验证结构时跳过的数据库列\n")
+	buf.WriteString("ignore_fields = [")
+	for i, f := range cfg.IgnoreFields {
+		if i > 0 {
+			buf.WriteString(", ")
+		}
+		fmt.Fprintf(&buf, "%q", f)
+	}
+	buf.WriteString("]\n\n")
+
+	buf.WriteString("# 验证结构体字段上生成的 Tag 名称\n")
+	buf.WriteString("tags = [")
+	for i, tag := range cfg.Tags {
+		if i > 0 {
+			buf.WriteString(", ")
+		}
+		fmt.Fprintf(&buf, "%q", tag)
+	}
+	buf.WriteString("]\n\n")
+
+	buf.WriteString("# gookit/validate 场景名称配置\n")
+	fmt.Fprintf(&buf, "insert_scene = %q\n", cfg.InsertScene)
+	fmt.Fprintf(&buf, "update_scene = %q\n", cfg.UpdateScene)
+	fmt.Fprintf(&buf, "delete_scene = %q\n\n", cfg.DeleteScene)
+
+	buf.WriteString("# 全局数据库数据类型到 Go 类型的映射\n")
+	for _, key := range sortedKeys(cfg.TypeMappings) {
+		tm := cfg.TypeMappings[key]
+		fmt.Fprintf(&buf, "[type_mappings.%s]\n", key)
+		fmt.Fprintf(&buf, "db_type = %q\n", tm.DBType)
+		fmt.Fprintf(&buf, "go_type = %q\n", tm.GoType)
+		fmt.Fprintf(&buf, "import_path = %q\n\n", tm.ImportPath)
+	}
+
+	buf.WriteString("# 按数据表独立配置的字段 Go 类型与 Import 路径\n")
+	for _, tbl := range sortedKeys(cfg.TableConfigs) {
+		tCfg := cfg.TableConfigs[tbl]
+		for _, fName := range sortedKeys(tCfg.Fields) {
+			fCfg := tCfg.Fields[fName]
+			fmt.Fprintf(&buf, "[table_configs.%s.fields.%s]\n", tbl, fName)
+			fmt.Fprintf(&buf, "go_type = %q\n", fCfg.GoType)
+			fmt.Fprintf(&buf, "import_path = %q\n\n", fCfg.ImportPath)
+		}
+	}
+
+	return buf.Bytes(), nil
 }
 
 // DriverMeta 描述受支持数据库驱动的信息和 DSN 示例。

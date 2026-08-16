@@ -1,0 +1,28 @@
+driver = 'mysql'
+dsn = 'root:password@tcp(127.0.0.1:3306)/demo?charset=utf8mb4&parseTime=True&loc=Local'
+out_dir = 'generated'
+model_out = ''
+query_out = ''
+validator_out = ''
+validator_package = 'request'
+tables = []
+table_prefix = ''
+ignore_fields = ['created_at', 'updated_at', 'deleted_at']
+tags = ['json', 'form', 'xml', 'url']
+insert_scene = 'insert'
+update_scene = 'update'
+delete_scene = 'delete'
+
+[type_mappings.jsonb]
+db_type = 'jsonb'
+go_type = 'datatypes.JSON'
+import_path = 'gorm.io/datatypes'
+
+[type_mappings.uuid]
+db_type = 'uuid'
+go_type = 'uuid.UUID'
+import_path = 'github.com/google/uuid'
+
+[table_configs.sys_admin.fields.avatar]
+go_type = 'custom.AvatarUrl'
+import_path = 'myproject/pkg/custom'
