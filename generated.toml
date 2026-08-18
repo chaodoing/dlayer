@@ -12,9 +12,9 @@ dsn = "root:123.com@tcp(127.0.0.1:3306)/safes?charset=utf8mb4&parseTime=True&loc
 out_dir = "data-layer"
 
 # 子目录输出配置 (留空时基于 out_dir 扩展)
-model_out = "data-layer/models"
-query_out = "data-layer/query"
-validator_out = "data-layer/request"
+model_out = "models"
+query_out = "query"
+validator_out = "request"
 validator_package = "request"
 
 # 数据库表过滤 (为空数组 [] 时默认生成数据库中的全部表)
@@ -69,4 +69,3 @@ import_path = "gorm.io/gorm"
 [table_configs.sys_admin.fields.updated_at]
 go_type = "*calendar.Datetime"
 import_path = "github.com/chaodoing/pkg/calendar"
-

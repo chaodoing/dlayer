@@ -61,7 +61,7 @@ func generateORM(db *gorm.DB, cfg Config, tables []string) (err error) {
 			if cfg.TablePrefix != "" && strings.HasPrefix(rawName, cfg.TablePrefix) {
 				rawName = strings.TrimPrefix(rawName, cfg.TablePrefix)
 			}
-			modelName := toExportedName(singularize(rawName))
+			modelName := toExportedName(rawName)
 
 			// Build ModelOpts including per-table field type overrides
 			var opts []gen.ModelOpt

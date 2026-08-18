@@ -32,24 +32,17 @@ func toExportedName(name string) string {
 	return value
 }
 
-// singularize 对常见英文复数表名做轻量单数化处理。
-func singularize(table string) string {
-	lower := strings.ToLower(table)
-	switch {
-	case strings.HasSuffix(lower, "ies") && len(table) > 3:
-		return table[:len(table)-3] + "y"
-	case strings.HasSuffix(lower, "ses") && len(table) > 3:
-		return table[:len(table)-2]
-	case strings.HasSuffix(lower, "s") && !strings.HasSuffix(lower, "ss") && !strings.HasSuffix(lower, "us") && len(table) > 3:
-		return table[:len(table)-1]
-	default:
-		return table
+// validatorStructName 根据表名和前缀生成请求验证结构名称。
+func validatorStructName(table, prefix string) string {
+	name := table
+	if prefix != "" && strings.HasPrefix(name, prefix) {
+		name = strings.TrimPrefix(name, prefix)
 	}
+	return toExportedName(name)
 }
 
-// validatorStructName 根据表名和前缀生成请求验证结构名称。
-// 不做单数化，避免 sys_dictionary 和 sys_dictionaries 这类表名生成同名结构。
-func validatorStructName(table, prefix string) string {
+// validatorMiddlewareName 根据表名和前缀生成请求中间件函数名称。
+func validatorMiddlewareName(table, prefix string) string {
 	name := table
 	if prefix != "" && strings.HasPrefix(name, prefix) {
 		name = strings.TrimPrefix(name, prefix)

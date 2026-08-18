@@ -1,0 +1,570 @@
+# ==============================================================================
+# dlayer 代码生成器配置文件 (TOML 格式)
+# ==============================================================================
+
+# Web 框架，支持 iris, gin
+framework = "iris"
+
+# 数据库驱动，支持 mysql, tidb, postgres, gaussdb, sqlite, sqlserver, clickhouse, dm, oracle
+driver = "dm"
+
+# 数据库连接字符串 (DSN)
+dsn = "dm://SYSDBA:123.com@127.0.0.1:30236?schema=SAFE"
+
+# 代码生成根输出目录
+out_dir = "http"
+
+# 子目录输出配置 (留空时基于 out_dir 扩展)
+model_out = "http/models"
+query_out = "http/query"
+validator_out = "http/request"
+validator_package = "request"
+
+# 数据库表过滤 (为空数组 [] 时默认生成数据库中的全部表)
+tables = []
+
+# 表名前缀裁剪 (如 sys_，生成模型与结构体名称时会自动剥离该前缀)
+table_prefix = ""
+
+# 生成验证结构时跳过的数据库列
+ignore_fields = ["created_at", "updated_at", "deleted_at"]
+
+# 验证结构体字段上生成的 Tag 名称
+tags = ["json", "form", "xml", "url"]
+
+# gookit/validate 场景名称配置
+insert_scene = "insert"
+update_scene = "update"
+delete_scene = "delete"
+
+# 全局数据库数据类型到 Go 类型的映射
+[type_mappings.date]
+db_type = "date"
+go_type = "calendar.Date"
+import_path = "pkg/calendar"
+
+[type_mappings.datetime]
+db_type = "datetime"
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[type_mappings.json]
+db_type = "json"
+go_type = "datatypes.JSON"
+import_path = "gorm.io/datatypes"
+
+[type_mappings.jsonb]
+db_type = "jsonb"
+go_type = "datatypes.JSON"
+import_path = "gorm.io/datatypes"
+
+[type_mappings.month]
+db_type = "month"
+go_type = "calendar.Month"
+import_path = "pkg/calendar"
+
+[type_mappings.time]
+db_type = "time"
+go_type = "calendar.Time"
+import_path = "pkg/calendar"
+
+[type_mappings.timestamp]
+db_type = "timestamp"
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[type_mappings.unix]
+db_type = "unix"
+go_type = "calendar.Unix"
+import_path = "pkg/calendar"
+
+[type_mappings.uuid]
+db_type = "uuid"
+go_type = "uuid.UUID"
+import_path = "github.com/google/uuid"
+
+# 按数据表独立配置的字段 Go 类型与 Import 路径
+[table_configs.idc_isp_contact.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_contact.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.idc_isp_contact.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_enterprise.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_enterprise.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.idc_isp_enterprise.fields.docking_state]
+go_type = "string"
+import_path = ""
+
+[table_configs.idc_isp_enterprise.fields.is_valid]
+go_type = "string"
+import_path = ""
+
+[table_configs.idc_isp_enterprise.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_house.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_house.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.idc_isp_house.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_ip_segment.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_ip_segment.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.idc_isp_ip_segment.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_service_user.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_service_user.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.idc_isp_service_user.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_virtual_host.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_virtual_host.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.idc_isp_virtual_host.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_website.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.idc_isp_website.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.idc_isp_website.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_dictionary.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_dictionary.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_dictionary.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_disposal_ddos.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_disposal_ddos.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_disposal_ddos.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_disposal_event_related.fields.created_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_disposal_event_related.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_disposal_event_related.fields.discovery_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_disposal_log.fields.created_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_disposal_log.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_disposal_log.fields.ip_address]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_disposal_order.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_disposal_order.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_disposal_order.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_event_logs.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_event_logs.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_event_logs.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_event.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_event.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_guarantee_event.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_info.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_info.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_guarantee_info.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_period.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_record.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_record.fields.record_time]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_resource.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_resource.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_guarantee_resource.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_system.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_system.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_guarantee_system.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_system_ip.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_guarantee_system_ip.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_guarantee_system_ip.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_platform.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_platform.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_platform.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_security_report.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_security_report.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_security_report.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_uts.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_uts.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_uts.fields.disabled]
+go_type = "int8"
+import_path = ""
+
+[table_configs.safe_uts.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_uts_api.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_uts_api.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_uts_api.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_uts_ddos.fields.attack_type]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_uts_ddos.fields.created_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_uts_ddos.fields.duration]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_uts_dictionary.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_uts_dictionary.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.safe_uts_dictionary.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_uts_info.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_uts_info.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.safe_uts_traffic_log.fields.time]
+go_type = "int64"
+import_path = ""
+
+[table_configs.sys_action_log.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_admin.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_admin.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.sys_admin.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_admin_profile.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_admin_profile.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_album.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_album.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.sys_album.fields.type]
+go_type = "int32"
+import_path = ""
+
+[table_configs.sys_album.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_album_category.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_album_category.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.sys_album_category.fields.type]
+go_type = "int32"
+import_path = ""
+
+[table_configs.sys_album_category.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_config.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_config.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.sys_config.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_config_value.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_config_value.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.sys_config_value.fields.options]
+go_type = "datatypes.JSON"
+import_path = "gorm.io/datatypes"
+
+[table_configs.sys_config_value.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_dictionaries.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_dictionaries.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.sys_dictionaries.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_dictionary.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_dictionary.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.sys_dictionary.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_industry.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_industry.fields.status]
+go_type = "int8"
+import_path = ""
+
+[table_configs.sys_industry.fields.updated_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_role.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_role.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.sys_role.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_rule.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.sys_rule.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.sys_rule.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.uts_collection.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.uts_collection.fields.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+
+[table_configs.uts_collection.fields.updated_at]
+go_type = "*calendar.Datetime"
+import_path = "pkg/calendar"
+
+[table_configs.uts_collection_log.fields.created_at]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+

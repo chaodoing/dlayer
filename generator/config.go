@@ -16,6 +16,8 @@ import (
 
 // Config 描述一次代码生成任务所需的全部输入。
 type Config struct {
+	// Framework 是 Web 框架名称，支持 iris 和 gin。
+	Framework string `json:"framework" yaml:"framework" toml:"framework"`
 	// Driver 是数据库驱动名称，支持 mysql、tidb、postgres、gaussdb、sqlite、sqlserver、clickhouse、dm 和 oracle。
 	Driver string `json:"driver" yaml:"driver" toml:"driver"`
 	// DSN 是数据库连接字符串，不同驱动使用各自的连接格式。
@@ -72,6 +74,7 @@ type TypeMapping struct {
 // DefaultConfig 返回配置文件未提供字段时使用的默认值。
 func DefaultConfig() Config {
 	return Config{
+		Framework:        "iris",
 		Driver:           "mysql",
 		OutDir:           "generated",
 		ValidatorPackage: "validator",
@@ -130,6 +133,9 @@ func LoadConfig(path string) (Config, error) {
 // ApplyDefaults 补齐依赖其他配置推导出的默认值。
 func (c *Config) ApplyDefaults() {
 	defaults := DefaultConfig()
+	if c.Framework == "" {
+		c.Framework = defaults.Framework
+	}
 	if c.Driver == "" {
 		c.Driver = defaults.Driver
 	}
@@ -373,6 +379,9 @@ func formatCommentedYAML(cfg Config) ([]byte, error) {
 	buf.WriteString("# dlayer 代码生成器配置文件\n")
 	buf.WriteString("# ==============================================================================\n\n")
 
+	buf.WriteString("# Web 框架，支持 iris, gin\n")
+	fmt.Fprintf(&buf, "framework: %q\n\n", cfg.Framework)
+
 	buf.WriteString("# 数据库驱动，支持 mysql, tidb, postgres, gaussdb, sqlite, sqlserver, clickhouse, dm, oracle\n")
 	fmt.Fprintf(&buf, "driver: %q\n\n", cfg.Driver)
 
@@ -471,6 +480,9 @@ func formatCommentedTOML(cfg Config) ([]byte, error) {
 	buf.WriteString("# ==============================================================================\n")
 	buf.WriteString("# dlayer 代码生成器配置文件 (TOML 格式)\n")
 	buf.WriteString("# ==============================================================================\n\n")
+
+	buf.WriteString("# Web 框架，支持 iris, gin\n")
+	fmt.Fprintf(&buf, "framework = %q\n\n", cfg.Framework)
 
 	buf.WriteString("# 数据库驱动，支持 mysql, tidb, postgres, gaussdb, sqlite, sqlserver, clickhouse, dm, oracle\n")
 	fmt.Fprintf(&buf, "driver = %q\n\n", cfg.Driver)

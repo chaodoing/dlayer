@@ -52,11 +52,28 @@ func writeValidateHelper(cfg Config) error {
 	return writeGoFile(path, buf.Bytes())
 }
 
-// writeValidatorFile 将单张表的列元数据转换为一个请求验证结构文件。
+// writeValidatorFile 将单张表的列元数据转换为一个请求验证结构及框架中间件文件。
 func writeValidatorFile(cfg Config, table string, columns []gorm.ColumnType) error {
 	structName := validatorStructName(table, cfg.TablePrefix)
+	middlewareName := validatorMiddlewareName(table, cfg.TablePrefix)
 	infos := make([]fieldInfo, 0, len(columns))
-	imports := map[string]struct{}{"github.com/gookit/validate": {}}
+
+	isIris := strings.EqualFold(cfg.Framework, "iris")
+	imports := map[string]struct{}{
+		"net/http":                   {},
+		"strings":                    {},
+		"github.com/gookit/validate": {},
+	}
+	if isIris {
+		imports["github.com/kataras/iris/v12"] = struct{}{}
+		imports["pkg/iris/boot"] = struct{}{}
+		imports["pkg/iris/o"] = struct{}{}
+	} else {
+		imports["github.com/gin-gonic/gin"] = struct{}{}
+		imports["pkg/gin/boot"] = struct{}{}
+		imports["pkg/gin/o"] = struct{}{}
+	}
+
 	ignore := ignoreSet(cfg.IgnoreFields)
 	tags := cfg.Tags
 	if len(tags) == 0 {
@@ -92,7 +109,7 @@ func writeValidatorFile(cfg Config, table string, columns []gorm.ColumnType) err
 		}
 		buf.WriteString(")\n\n")
 	}
-	fmt.Fprintf(&buf, "// %s is the request validator for the %s table.\n", structName, table)
+	fmt.Fprintf(&buf, "// %s %s\n", structName, table)
 	fmt.Fprintf(&buf, "type %s struct {\n", structName)
 	for _, info := range infos {
 		fieldTags := make([]string, 0, len(tags)+2)
@@ -108,11 +125,63 @@ func writeValidatorFile(cfg Config, table string, columns []gorm.ColumnType) err
 		fmt.Fprintf(&buf, "\t%s %s `%s`\n", info.Name, info.Type, strings.Join(fieldTags, " "))
 	}
 	buf.WriteString("}\n\n")
+
+	writeMiddleware(&buf, cfg, table, structName, middlewareName)
 	writeScenes(&buf, cfg, structName, infos)
 	writeMessages(&buf, structName, infos)
 
 	path := filepath.Join(cfg.ValidatorOut, toFileName(table)+"_validator.go")
 	return writeGoFile(path, buf.Bytes())
+}
+
+// writeMiddleware 为请求校验结构生成 Iris 或 Gin 对应框架的请求中间件。
+func writeMiddleware(buf *bytes.Buffer, cfg Config, table, structName, middlewareName string) {
+	isIris := strings.EqualFold(cfg.Framework, "iris")
+	if isIris {
+		fmt.Fprintf(buf, "// %s %s请求中间件（Iris）\n", middlewareName, table)
+		fmt.Fprintf(buf, "func %s(ctx iris.Context, container *boot.Container) {\n", middlewareName)
+		fmt.Fprintf(buf, "\tvar data %s\n", structName)
+		buf.WriteString("\tif err := ctx.ReadJSON(&data); err != nil {\n")
+		buf.WriteString("\t\to.O(ctx, 204, err.Error())\n")
+		buf.WriteString("\t\treturn\n")
+		buf.WriteString("\t}\n")
+		buf.WriteString("\tif strings.EqualFold(ctx.Method(), http.MethodPost) {\n")
+		buf.WriteString("\t\tif err := Validate(&data, SceneInsert); err != nil {\n")
+		buf.WriteString("\t\t\to.O(ctx, 206, err.Error())\n")
+		buf.WriteString("\t\t\treturn\n")
+		buf.WriteString("\t\t}\n")
+		buf.WriteString("\t\tctx.Next()\n")
+		buf.WriteString("\t} else if strings.EqualFold(ctx.Method(), http.MethodPut) {\n")
+		buf.WriteString("\t\tif err := Validate(&data, SceneUpdate); err != nil {\n")
+		buf.WriteString("\t\t\to.O(ctx, 206, err.Error())\n")
+		buf.WriteString("\t\t\treturn\n")
+		buf.WriteString("\t\t}\n")
+		buf.WriteString("\t\tctx.Next()\n")
+		buf.WriteString("\t}\n")
+		buf.WriteString("}\n\n")
+	} else {
+		fmt.Fprintf(buf, "// %s %s请求中间件（Gin）\n", middlewareName, table)
+		fmt.Fprintf(buf, "func %s(ctx *gin.Context, container *boot.Containers) {\n", middlewareName)
+		fmt.Fprintf(buf, "\tvar data %s\n", structName)
+		buf.WriteString("\tif err := ctx.ShouldBindJSON(&data); err != nil {\n")
+		buf.WriteString("\t\to.O(ctx, 204, err.Error())\n")
+		buf.WriteString("\t\treturn\n")
+		buf.WriteString("\t}\n")
+		buf.WriteString("\tif strings.EqualFold(ctx.Request.Method, http.MethodPost) {\n")
+		buf.WriteString("\t\tif err := Validate(&data, SceneInsert); err != nil {\n")
+		buf.WriteString("\t\t\to.O(ctx, 206, err.Error())\n")
+		buf.WriteString("\t\t\treturn\n")
+		buf.WriteString("\t\t}\n")
+		buf.WriteString("\t\tctx.Next()\n")
+		buf.WriteString("\t} else if strings.EqualFold(ctx.Request.Method, http.MethodPut) {\n")
+		buf.WriteString("\t\tif err := Validate(&data, SceneUpdate); err != nil {\n")
+		buf.WriteString("\t\t\to.O(ctx, 206, err.Error())\n")
+		buf.WriteString("\t\t\treturn\n")
+		buf.WriteString("\t\t}\n")
+		buf.WriteString("\t\tctx.Next()\n")
+		buf.WriteString("\t}\n")
+		buf.WriteString("}\n\n")
+	}
 }
 
 type fieldInfo struct {
@@ -169,23 +238,27 @@ func buildFieldInfo(cfg Config, column gorm.ColumnType) fieldInfo {
 
 // writeScenes 生成 gookit/validate 的 Insert、Update、Delete 场景配置。
 func writeScenes(buf *bytes.Buffer, cfg Config, structName string, fields []fieldInfo) {
-	insertScene := sceneName(cfg.InsertScene, "insert")
-	updateScene := sceneName(cfg.UpdateScene, "update")
-	deleteScene := sceneName(cfg.DeleteScene, "delete")
-
-	fmt.Fprintf(buf, "// ConfigValidation configures gookit/validate scenes.\n")
+	fmt.Fprintf(buf, "// ConfigValidation 配置验证规则场景\n")
 	fmt.Fprintf(buf, "func (%s) ConfigValidation(v *validate.Validation) {\n", structName)
 	buf.WriteString("\tv.WithScenes(validate.SValues{\n")
-	writeScene(buf, insertScene, insertFields(fields))
-	writeScene(buf, updateScene, fieldNames(fields))
-	writeScene(buf, deleteScene, deleteFields(fields))
+	writeScene(buf, sceneVar(cfg.InsertScene, "insert", "SceneInsert"), insertFields(fields))
+	writeScene(buf, sceneVar(cfg.UpdateScene, "update", "SceneUpdate"), fieldNames(fields))
+	writeScene(buf, sceneVar(cfg.DeleteScene, "delete", "SceneDelete"), deleteFields(fields))
 	buf.WriteString("\t})\n")
 	buf.WriteString("}\n\n")
 }
 
+func sceneVar(value, fallback, constVar string) string {
+	val := sceneName(value, fallback)
+	if val == fallback {
+		return constVar
+	}
+	return fmt.Sprintf("%q", val)
+}
+
 // writeScene 写入单个场景到 validate.SValues。
-func writeScene(buf *bytes.Buffer, scene string, fields []string) {
-	fmt.Fprintf(buf, "\t%q: []string{", scene)
+func writeScene(buf *bytes.Buffer, sceneExpr string, fields []string) {
+	fmt.Fprintf(buf, "\t%s: []string{", sceneExpr)
 	for i, field := range fields {
 		if i > 0 {
 			buf.WriteString(", ")

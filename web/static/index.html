@@ -155,6 +155,15 @@
               </div>
 
               <div class="form-group col-6">
+                <label for="framework-select">目标 Web 框架 (Framework)</label>
+                <select id="framework-select" class="form-control">
+                  <option value="gin">Gin (github.com/gin-gonic/gin)</option>
+                  <option value="iris">Iris (github.com/kataras/iris/v12)</option>
+                </select>
+                <small class="form-hint">选择验证器中间件对应的 Web 框架类型</small>
+              </div>
+
+              <div class="form-group col-6">
                 <label for="validator-pkg">验证器包名 (ValidatorPackage)</label>
                 <input type="text" id="validator-pkg" class="form-control" value="validator">
               </div>

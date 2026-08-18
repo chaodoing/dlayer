@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     drivers: [],
     configPath: 'dlayer.yaml',
     config: {
+      framework: 'gin',
       driver: 'mysql',
       dsn: '',
       out_dir: 'generated',
@@ -164,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function bindConfigToUI() {
     const cfg = appState.config;
+    if (cfg.framework) document.getElementById('framework-select').value = cfg.framework;
     if (cfg.driver) document.getElementById('driver-select').value = cfg.driver;
     if (cfg.dsn) document.getElementById('dsn-input').value = cfg.dsn;
     if (cfg.out_dir) document.getElementById('out-dir').value = cfg.out_dir;
@@ -187,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveCurrentTableFieldsToState();
 
     return {
+      framework: document.getElementById('framework-select').value,
       driver: document.getElementById('driver-select').value,
       dsn: document.getElementById('dsn-input').value,
       out_dir: document.getElementById('out-dir').value,
