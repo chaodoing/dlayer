@@ -2,6 +2,9 @@
 # dlayer 代码生成器配置文件 (TOML 格式)
 # ==============================================================================
 
+# Web 框架，支持 iris, gin
+framework = "iris"
+
 # 数据库驱动，支持 mysql, tidb, postgres, gaussdb, sqlite, sqlserver, clickhouse, dm, oracle
 driver = "mysql"
 
@@ -35,29 +38,52 @@ update_scene = "update"
 delete_scene = "delete"
 
 # 全局数据库数据类型到 Go 类型的映射
-[type_mappings.jsonb]
-db_type = "jsonb"
-go_type = "datatypes.JSON"
-import_path = "gorm.io/datatypes"
-
 [type_mappings.uuid]
 db_type = "uuid"
 go_type = "uuid.UUID"
 import_path = "github.com/google/uuid"
 
-# 按数据表独立配置的字段 Go 类型与 Import 路径
-[table_configs.safe_company.fields.created_at]
+[type_mappings.jsonb]
+db_type = "jsonb"
+go_type = "datatypes.JSON"
+import_path = "gorm.io/datatypes"
+
+[type_mappings.json]
+db_type = "json"
+go_type = "datatypes.JSON"
+import_path = "gorm.io/datatypes"
+
+[type_mappings.date]
+db_type = "date"
+go_type = "calendar.Date"
+import_path = "pkg/calendar"
+
+[type_mappings.datetime]
+db_type = "datetime"
 go_type = "calendar.Datetime"
-import_path = "github.com/chaodoing/pkg/calendar"
+import_path = "pkg/calendar"
 
-[table_configs.safe_company.fields.deleted_at]
-go_type = "gorm.DeletedAt"
-import_path = "gorm.io/gorm"
+[type_mappings.time]
+db_type = "time"
+go_type = "calendar.Time"
+import_path = "pkg/calendar"
 
-[table_configs.safe_company.fields.updated_at]
-go_type = "*calendar.Datetime"
-import_path = "github.com/chaodoing/pkg/calendar"
+[type_mappings.month]
+db_type = "month"
+go_type = "calendar.Month"
+import_path = "pkg/calendar"
 
+[type_mappings.unix]
+db_type = "unix"
+go_type = "calendar.Unix"
+import_path = "pkg/calendar"
+
+[type_mappings.timestamp]
+db_type = "timestamp"
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+
+# 按数据表独立配置的字段 Go 类型与 Import 路径
 [table_configs.sys_admin.fields.created_at]
 go_type = "calendar.Datetime"
 import_path = "github.com/chaodoing/pkg/calendar"
@@ -69,3 +95,4 @@ import_path = "gorm.io/gorm"
 [table_configs.sys_admin.fields.updated_at]
 go_type = "*calendar.Datetime"
 import_path = "github.com/chaodoing/pkg/calendar"
+

@@ -92,10 +92,6 @@ func importForType(cfg Config, goType string) string {
 
 // mergeDataTypeMap 将内置类型映射和用户自定义映射合并，自定义映射优先。
 func mergeDataTypeMap(base map[string]func(gorm.ColumnType) string, custom map[string]TypeMapping) map[string]func(gorm.ColumnType) string {
-	if len(custom) == 0 {
-		return base
-	}
-
 	merged := make(map[string]func(gorm.ColumnType) string, len(base)+len(custom))
 	for key, value := range base {
 		merged[key] = value
@@ -106,7 +102,24 @@ func mergeDataTypeMap(base map[string]func(gorm.ColumnType) string, custom map[s
 			return goType
 		}
 	}
-	return merged
+	return withDatabaseTypeCaseAliases(merged)
+}
+
+// withDatabaseTypeCaseAliases 为类型映射补充大写别名。
+// gorm.io/gen 使用 DatabaseTypeName() 原样查表，达梦/Oracle 等驱动返回大写类型名。
+func withDatabaseTypeCaseAliases(m map[string]func(gorm.ColumnType) string) map[string]func(gorm.ColumnType) string {
+	if len(m) == 0 {
+		return m
+	}
+
+	aliases := make(map[string]func(gorm.ColumnType) string, len(m)*2)
+	for key, fn := range m {
+		aliases[key] = fn
+		if upper := strings.ToUpper(key); upper != key {
+			aliases[upper] = fn
+		}
+	}
+	return aliases
 }
 
 // lookupCustomTypeMapping 查找列对应的用户自定义类型映射。

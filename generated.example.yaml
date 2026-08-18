@@ -27,7 +27,7 @@ insert_scene: insert
 update_scene: update
 delete_scene: delete
 
-# 自定义类型映射。key 是数据库类型，go_type 是生成的 Go 类型。
+# 自定义类型映射。键名是数据库类型（大小写不敏感），go_type 是生成的 Go 类型。
 type_mappings:
     uuid:
         go_type: uuid.UUID
@@ -35,3 +35,31 @@ type_mappings:
     jsonb:
         go_type: datatypes.JSON
         import_path: gorm.io/datatypes
+    json:
+        go_type: datatypes.JSON
+        import_path: gorm.io/datatypes
+    date:
+        go_type: calendar.Date
+        import_path: pkg/calendar
+    datetime:
+        go_type: calendar.Datetime
+        import_path: pkg/calendar
+    time:
+        go_type: calendar.Time
+        import_path: pkg/calendar
+    month:
+        go_type: calendar.Month
+        import_path: pkg/calendar
+    unix:
+        go_type: calendar.Unix
+        import_path: pkg/calendar
+    timestamp:
+        go_type: calendar.Datetime
+        import_path: pkg/calendar
+
+# 自定义字段名映射，优先级高于 type_mappings。
+# deleted_at 未配置时默认映射为 gorm.DeletedAt。
+field_mappings:
+    deleted_at:
+        go_type: gorm.DeletedAt
+        import_path: gorm.io/gorm

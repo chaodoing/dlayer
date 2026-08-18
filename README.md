@@ -77,6 +77,9 @@ generated/
 示例配置文件（`generated.yaml` 或 `generated.toml`）：
 
 ```yaml
+# Web 框架: iris, gin
+framework: iris
+
 # 数据库驱动: mysql, tidb, postgres, gaussdb, sqlite, sqlserver, clickhouse, dm, oracle
 driver: mysql
 dsn: "root:password@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
@@ -131,8 +134,63 @@ table_configs:
         go_type: custom.AvatarUrl
         import_path: myproject/pkg/custom
 ```
+```
 
 ---
+
+<<<<<<< HEAD
+## 🗄️ 数据库 DSN 示例参考
+=======
+```toml
+[type_mappings.uuid]
+go_type = "uuid.UUID"
+import_path = "github.com/google/uuid"
+
+[type_mappings.jsonb]
+go_type = "datatypes.JSON"
+import_path = "gorm.io/datatypes"
+
+[type_mappings.date]
+go_type = "calendar.Date"
+import_path = "pkg/calendar"
+
+[type_mappings.TIMESTAMP]
+go_type = "calendar.Datetime"
+import_path = "pkg/calendar"
+```
+
+该映射会同时影响 `gorm.io/gen` 生成的模型字段类型，以及验证器结构体字段类型和 import。
+
+达梦、Oracle 等驱动返回大写的类型名（如 `TIMESTAMP`），生成器会自动兼容大小写。
+
+## 自定义字段名映射
+
+当某个列名需要固定为特定 Go 类型、且应覆盖 `type_mappings` 时，使用 `field_mappings`。键名是数据库列名（大小写不敏感）。
+
+内置默认映射：
+
+| 列名 | Go 类型 | import |
+|------|---------|--------|
+| `deleted_at` | `gorm.DeletedAt` | `gorm.io/gorm` |
+
+可在配置中显式声明或覆盖：
+
+```yaml
+field_mappings:
+  deleted_at:
+    go_type: gorm.DeletedAt
+    import_path: gorm.io/gorm
+```
+
+TOML 写法：
+
+```toml
+[field_mappings.deleted_at]
+go_type = "gorm.DeletedAt"
+import_path = "gorm.io/gorm"
+```
+
+可选字段 `gen_type` 用于指定 query 层 `field.NewXxx` 的类型名；留空时由 `gorm.io/gen` 自动推导。
 
 ## 🗄️ 数据库 DSN 示例参考
 
